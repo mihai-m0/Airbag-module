@@ -19,24 +19,15 @@ The ADXL362 is a 3-axis digital accelerometer from Analog Devices, soldered on t
 - It can raise a **data-ready** signal on its INT1 pin each time a new sample is available. The design uses it to read exactly one sample per measurement.
 - After power-up it is in standby, so it has to be configured and switched to measurement mode with register writes.
 
-## Repository layout
 
-```
-rtl/           VHDL design files
-tb/            self-checking testbenches
-constraints/   pin assignments for the Nexys A7-100T
-python/        scripts for the PC side
-scripts/       Vivado project creation script
-```
 
 ## The design files (`rtl/`)
 
 Data flows through the modules in this order:
 
 ```
-ADXL362 <--SPI--> spi_master <--> adxl362_ctrl --+--> sample_streamer --> uart_tx --> PC
-                                                 |
-                                                 +--> airbag_core (calibrator --> crash_detector) --> LEDs
+ADXL362 <-SPI-> spi_master <-> adxl362_ctrl -> sample_streamer -> uart_tx -> PC
+                                            -> airbag_core -> LEDs
 ```
 
 **`spi_master.vhd`** is the lowest layer. It sends and receives one byte over SPI (mode 0, MSB first) and drives the SCLK and MOSI lines while sampling MISO. It knows nothing about the sensor: it gets a byte and a `start` pulse, and reports the received byte with a `done` pulse. Chip select is handled by the controller above it.
