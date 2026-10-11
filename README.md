@@ -79,9 +79,9 @@ To use it:
 
 I will include a plot of all three axes (X, Y and Z) overlapped, taken with `live_plot.py`. The moments where the board was crashed will be marked on the screenshot.
 
-<!-- Once the screenshot is uploaded, replace the file name and remove the comment markers:
-![X, Y and Z overlapped, crashes marked](live_plot.png)
--->
+
+![X, Y and Z overlapped, crashes marked](Figure1.jpg)
+
 
 ## Building the project
 
