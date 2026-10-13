@@ -95,7 +95,7 @@ This project is a work in progress. Where it stands:
 
 - [x] SPI master and sensor controller (sensor ID read, configuration, X/Y/Z readout)
 - [x] UART streaming to the PC and live plotting in Python
-- [ ] Add the plot with the crashes marked
+- [x] Add the plot with the crashes marked
 - [ ] Calibrate the resting values at startup and subtract them from the readings
 - [ ] Record data for different events (crashes, taps, drops, shaking) and choose the detection threshold, the crash axis and the direction from it
 - [ ] Crash detection that lights an LED and stays latched until reset
