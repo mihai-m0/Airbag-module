@@ -1,12 +1,10 @@
-# FPGA Crash Detection Module (Airbag Demo)
+# FPGA Crash Detection Module
 
 ## About the project
 
-This project is a crash detector built in VHDL for the **Digilent Nexys A7-100T** FPGA board. The idea is to imitate, on a small scale, what the control unit of a car airbag does: continuously read an acceleration sensor, work out whether a sudden deceleration (a crash) has happened, and trigger an output when it does. Here the output is an LED, so nothing in this project controls a real airbag.
+This project is a crash detector built in VHDL for the **Digilent Nexys A7-100T** FPGA board. The idea is to imitate, on a small scale, what the control unit of a car airbag does: continuously read an acceleration sensor, work out whether a sudden deceleration (a crash) has happened, and trigger an output when it does.Here the output is an LED, so nothing in this project controls a real airbag.
 
-The design reads the accelerometer that is already on the board, so no extra hardware is needed. Everything is written from scratch in VHDL, without vendor IP cores or a soft-core processor: the SPI communication, the sensor setup and the UART link to the PC.
-
-The project is **still under development**. The sensor reading and the live plotting work on the board. The calibration and the crash detection itself are not part of this repository yet (see the roadmap at the end).
+The design reads the accelerometer that is already on the board, so no extra hardware is needed. Everything is written from scratch in VHDL:the SPI communication, the sensor setup and the UART link to the PC.
 
 ## The sensor: ADXL362
 
@@ -88,17 +86,3 @@ I will include a plot of all three axes (X, Y and Z) overlapped, taken with `liv
 1. In Vivado, create a project for the part `xc7a100tcsg324-1` (the Nexys A7-100T), add the VHDL files and set `top` as the top module.
 2. Add a constraints (`.xdc`) file with the pin assignments for the clock, the reset button, the accelerometer (including INT1), the UART and the LEDs. Digilent publishes a master XDC for the board.
 3. Generate the bitstream and program the board.
-
-## Roadmap
-
-This project is a work in progress. Where it stands:
-
-- [x] SPI master and sensor controller (sensor ID read, configuration, X/Y/Z readout)
-- [x] UART streaming to the PC and live plotting in Python
-- [x] Add the plot with the crashes marked
-- [ ] Calibrate the resting values at startup and subtract them from the readings
-- [ ] Record data for different events (crashes, taps, drops, shaking) and choose the detection threshold, the crash axis and the direction from it
-- [ ] Crash detection that lights an LED and stays latched until reset
-- [ ] Reject false triggers, for example by requiring several consecutive samples above the threshold, or by integrating the change in velocity over a short window
-- [ ] Measure the detection latency and the false-trigger rate
-- [ ] Add a short demo video
