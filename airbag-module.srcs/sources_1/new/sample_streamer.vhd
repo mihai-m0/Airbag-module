@@ -1,4 +1,10 @@
--- On each sample_valid, sends a 7-byte frame:  AA  XH XL  YH YL  ZH ZL
+--Does not contribute to the airbag module functionality
+--It establishes a connection with the UART_TX so we can read the sensor data
+--On each sample_valid, sends a 7-byte frame:  AA  XH XL  YH YL  ZH ZL
+--the reason we use 0xAA is because a high byte can never have the format 101..(it can only have 0000... or 1111...)
+--0xAA serves the purpose of letting the python script know that a 6-byte frame is coming
+--if we didn't use this 'head' of the array,then we would risk starting the reading in the middle of a frame
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -15,10 +21,12 @@ entity sample_streamer is
 end entity;
 
 architecture rtl of sample_streamer is
-  type state_t is (S_IDLE, S_PULSE, S_GAP, S_WAIT);
-  type buf_t is array (0 to 6) of std_logic_vector(7 downto 0);
-  signal state : state_t := S_IDLE;
-  signal buf   : buf_t := (others => (others => '0'));
+  type state_type is (S_IDLE,S_PULSE,S_GAP,S_WAIT);
+  
+  --buffer is where I store the bytes which will be sent
+  type buf_type is array (0 to 6) of std_logic_vector(7 downto 0);
+  signal state : state_type := S_IDLE;
+  signal buf   : buf_type := (others => (others => '0'));
   signal idx   : integer range 0 to 6 := 0;
 begin
   process(clk)

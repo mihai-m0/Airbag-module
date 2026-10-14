@@ -1,18 +1,27 @@
 -- ADXL362 controller
---   1) read DEVID_AD, DEVID_MST, PARTID (expect AD, 1D, F2)         -> id_ok
---   2) FILTER_CTL (0x2C) = 0x85 : +/-8 g, ODR 400 Hz, BW = ODR/2
---   3) INTMAP1    (0x2A) = 0x01 : DATA_READY on INT1
---   4) POWER_CTL  (0x2D) = 0x02 : measurement mode
---   5) on every INT1 (data ready): burst-read XDATA_L..ZDATA_H (0x0E..0x13)
+--   1) We read the registers DEVID_AD, DEVID_MST, PARTID (expect AD, 1D, F2) so we can confirm
+--   that the sensor has been connected properly
+--
+--   2) The FILTER_CTL(0x2C) register is meant to set some parameters
+--   for our measurements = 0x85 : measurement range -> +/-8 g
+--                                 output data rate(ODR) -> 400 Hz
+--                                 bandwidth -> 0(ODR/2)
+--
+--   3) INTMAP1(adrress 0x2A) = 0x01 : DATA_READY on INT1
+--   4) POWER_CTL(address 0x2D) = 0x02 : measurement mode (10)
+--   5) on every INT1 (data ready): burst-read the following registers:XDATA_L,XDATA_H,...,ZDATA_H (addr 0x0E,..,0x13)
 --      If INT1 never comes, fall back to reading every TIMEOUT_CYCLES.
 -- ADXL362 commands: 0x0A = write register, 0x0B = read register.
+-- for burst reading,we will send 0B,starting_addr,dummy_bytes
+-- for wrtiting,we send 0A,addres,value
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity adxl362_ctrl is
   generic (
-    POWERUP_CYCLES : integer := 2_000_000;   -- 20 ms after reset
+    POWERUP_CYCLES : integer := 2_000_000;   -- 20 ms after being reset
     GUARD_CYCLES   : integer := 1_000;       -- 10 us blind time after a read (lets INT1 clear)
     TIMEOUT_CYCLES : integer := 1_000_000    -- 10 ms fallback if INT1 is silent
   );
@@ -31,11 +40,16 @@ entity adxl362_ctrl is
 end entity;
 
 architecture rtl of adxl362_ctrl is
-  type state_t is (S_POWERUP, S_CS_LOW, S_SEND, S_WAIT, S_CS_HIGH, S_GAP);
-  type phase_t is (P_ID, P_FILT, P_INT, P_PWR, P_SAMPLE);
+  type state_type is (S_POWERUP, S_CS_LOW, S_SEND, S_WAIT, S_CS_HIGH, S_GAP);
+  --the state type describes a transaction:the chip select(CS) is pulles low,
+  --the bytes are sent,and then it's pulled back high
+  type phase_type is (P_ID, P_FILT, P_INT, P_PWR, P_SAMPLE);
+  --the phases describe the tasks we will accomplish using this module
+  --first we read the IDs,then we set some parameters,set the intmap,set the measurement mode,
+  --and then we start burst reading
 
-  signal state : state_t := S_POWERUP;
-  signal phase : phase_t := P_ID;
+  signal state : state_type := S_POWERUP;
+  signal phase : phase_type := P_ID;
   signal idx   : integer range 0 to 7 := 0;
   signal cnt   : integer range 0 to 2**24-1 := 0;
   signal int1_s1, int1_s : std_logic := '0';
@@ -43,10 +57,13 @@ architecture rtl of adxl362_ctrl is
   signal id0, id1, id2 : std_logic_vector(7 downto 0) := (others => '0');
   signal xl, xh, yl, yh, zl, zh : std_logic_vector(7 downto 0) := (others => '0');
 
-  function tx_byte(p : phase_t; i : integer) return std_logic_vector is
+
+  --the purpose of this function is to send the sequence of bytes according to
+  --the phase that we're in
+  function tx_byte(p : phase_type; i : integer) return std_logic_vector is
   begin
     case p is
-      when P_FILT =>                                  -- write 0x85 to reg 0x2C
+      when P_FILT =>                                  --we write 0x85 to reg 0x2C
         if i = 0 then return x"0A";
         elsif i = 1 then return x"2C";
         else return x"85"; end if;
@@ -67,7 +84,9 @@ architecture rtl of adxl362_ctrl is
     end case;
   end function;
 
-  function last_idx(p : phase_t) return integer is
+  --the purpose of this function is to return the number of bytes
+  --we're transactioning during one phase
+  function last_idx(p : phase_type) return integer is
   begin
     case p is
       when P_ID     => return 4;   -- cmd, addr, 3 data bytes
@@ -75,6 +94,7 @@ architecture rtl of adxl362_ctrl is
       when others   => return 2;   -- cmd, addr, data (register write)
     end case;
   end function;
+  
 begin
   process(clk)
   begin
@@ -94,23 +114,29 @@ begin
             if cnt = POWERUP_CYCLES then cnt <= 0; state <= S_CS_LOW;
             else cnt <= cnt + 1; end if;
 
+          --when pulling the CS line low,a transaction starts
           when S_CS_LOW =>
             cs_n  <= '0';
             idx   <= 0;
             state <= S_SEND;
 
+          --spi_tx holds the byte we will send
+          --idx is the index of the byte we're sending
           when S_SEND =>
             spi_tx    <= tx_byte(phase, idx);
             spi_start <= '1';
             state     <= S_WAIT;
 
+          
           when S_WAIT =>
             if spi_done = '1' then
               case phase is
+              --the first 2 bytes which are sent back are ignored
                 when P_ID =>
                   if    idx = 2 then id0 <= spi_rx;
                   elsif idx = 3 then id1 <= spi_rx;
                   elsif idx = 4 then id2 <= spi_rx; end if;
+                  
                 when P_SAMPLE =>
                   case idx is
                     when 2 => xl <= spi_rx;
@@ -156,7 +182,7 @@ begin
 
           when S_GAP =>
             if phase = P_SAMPLE then
-              -- wait for data-ready (after a short guard time), or time out
+              -- wait for data-ready(after a short guard time), or time out
               if cnt >= GUARD_CYCLES and (int1_s = '1' or cnt = TIMEOUT_CYCLES) then
                 cnt   <= 0;
                 state <= S_CS_LOW;

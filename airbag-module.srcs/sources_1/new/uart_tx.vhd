@@ -1,4 +1,6 @@
--- UART transmitter, 8N1, LSB first. 100 MHz / 115200 = 868 clocks per bit.
+-- UART transmitter 100 MHz / 115200 = 868 clocks per bit.
+--Does not contribute to the airbag module functionality
+--It establishes a connection with the computer so we can read the sensor data
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -6,7 +8,7 @@ entity uart_tx is
   generic (CLKS_PER_BIT : positive := 868);
   port (
     clk, rst : in  std_logic;
-    start    : in  std_logic;                     -- 1-cycle pulse (ignored if busy)
+    start    : in  std_logic;                     -- 1-cycle pulse(which will be ignored if busy)
     data     : in  std_logic_vector(7 downto 0);
     busy     : out std_logic;
     tx       : out std_logic := '1'

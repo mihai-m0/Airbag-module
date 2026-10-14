@@ -10,7 +10,7 @@ import serial
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-PORT      = "COM3"
+PORT      = "COM7"
 BAUD      = 115200
 LSB_PER_G = 250.0      # +/-8 g range: 4 mg per LSB
 FS        = 400.0      # sample rate in Hz (ODR set in the FPGA)
