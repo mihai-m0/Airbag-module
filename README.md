@@ -6,6 +6,8 @@ This project is a crash detector built in VHDL for the **Digilent Nexys A7-100T*
 
 The design reads the accelerometer that is already on the board, so no extra hardware is needed. Everything is written from scratch in VHDL:the SPI communication, the sensor setup and the UART link to the PC.
 
+A video showing how it works can be found at the following link: https://youtu.be/pj-C49iV3VE
+
 ## The sensor: ADXL362
 
 The ADXL362 is a 3-axis digital accelerometer from Analog Devices, soldered on the Nexys A7. The main facts relevant here:
