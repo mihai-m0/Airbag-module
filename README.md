@@ -86,5 +86,6 @@ I will include a plot of all three axes (X, Y and Z) overlapped, taken with `liv
 ## Building the project
 
 1. In Vivado, create a project for the part `xc7a100tcsg324-1` (the Nexys A7-100T), add the VHDL files and set `top` as the top module.
-2. Add a constraints (`.xdc`) file with the pin assignments for the clock, the reset button, the accelerometer (including INT1), the UART and the LEDs. Digilent publishes a master XDC for the board.
+2. Add the constraints file (nexys_a7.xdc)
 3. Generate the bitstream and program the board.
+4. To see the live plot,run "python live_plot.py"
