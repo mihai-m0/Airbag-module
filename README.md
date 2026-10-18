@@ -19,6 +19,9 @@ The ADXL362 is a 3-axis digital accelerometer from Analog Devices, soldered on t
 - It can raise a **data-ready** signal on its INT1 pin each time a new sample is available. The design uses it to read exactly one sample per measurement.
 - After power-up it is in standby, so it has to be configured and switched to measurement mode with register writes.
 
+  The technical documentation can be found at the following link: https://www.analog.com/media/en/technical-documentation/data-sheets/adxl362.pdf
+  Pages of interest: 13,21,25-28,36
+
 ## The design files
 
 Data flows through the modules in this order:
